@@ -1,0 +1,28 @@
+<Application x:Class="ApexBank.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:converters="clr-namespace:ApexBank.Converters"
+             StartupUri="MainWindow.xaml">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Styles/Colors.xaml"/>
+                <ResourceDictionary Source="Styles/Icons.xaml"/>
+                <ResourceDictionary Source="Styles/Controls.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- Converters -->
+            <BooleanToVisibilityConverter x:Key="BoolToVisConverter"/>
+            <converters:AmountColorConverter x:Key="AmountColorConverter"/>
+            <converters:AmountPrefixConverter x:Key="AmountPrefixConverter"/>
+            <converters:InverseBooleanToVisibilityConverter x:Key="InvBoolToVisConverter"/>
+            <converters:EqualityToVisibilityConverter x:Key="EqToVisConverter"/>
+            <converters:EqualityToBooleanConverter x:Key="EqToBoolConverter"/>
+            <converters:StringNullOrEmptyToVisibilityConverter x:Key="StringNullOrEmptyToVisConverter"/>
+            <converters:HexToBrushConverter x:Key="HexToBrushConverter"/>
+            <converters:NullToVisibilityConverter x:Key="NullToVisConverter"/>
+            <converters:TransactionCategoryToIconConverter x:Key="CategoryToIconConverter"/>
+            <converters:TransactionCategoryToBrushConverter x:Key="CategoryToBrushConverter"/>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

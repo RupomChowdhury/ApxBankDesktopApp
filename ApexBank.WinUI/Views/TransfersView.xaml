@@ -1,0 +1,395 @@
+<UserControl
+    x:Class="ApexBank.WinUI.Views.TransfersView"
+    x:Name="TransfersRoot"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,0,36">
+        <Grid Margin="24,20,24,24">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header and Channels Bar -->
+            <StackPanel Grid.Row="0" Margin="0,0,0,16">
+                <TextBlock Text="Transfers &amp; Payments" Foreground="{StaticResource BrushTextPrimary}" FontSize="24" FontWeight="Bold"/>
+                <TextBlock Text="Zero-fee Same-Bank instant transfers, Bangladeshi national rails (NPSB, BEFTN, RTGS, MFS), and bill payment via card." Foreground="{StaticResource BrushTextSecondary}" FontSize="13" Margin="0,2,0,14"/>
+
+                <!-- Segmented Transfer Channels Pill Bar -->
+                <Border Background="#F1F5F9" BorderBrush="{StaticResource BrushBorderSubtle}" BorderThickness="1" CornerRadius="10" Padding="4" HorizontalAlignment="Left">
+                    <StackPanel Orientation="Horizontal">
+                        <Button Style="{StaticResource TabPillBtn}" Content="Same-Bank (৳0 Free)" 
+                                Command="{Binding SetTransferTabCommand}" CommandParameter="SameBank"/>
+                        <Button Style="{StaticResource TabPillBtn}" Content="Bangladeshi Bank Transfer (NPSB / BEFTN / RTGS / MFS)" 
+                                Command="{Binding SetTransferTabCommand}" CommandParameter="ExternalBD"/>
+                        <Button Style="{StaticResource TabPillBtn}" Content="Pay via Card (Utilities &amp; Bills)" 
+                                Command="{Binding SetTransferTabCommand}" CommandParameter="CardPay"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="490"/>
+                    <ColumnDefinition Width="20"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- LEFT COLUMN: ACTIVE CHANNEL FORM -->
+                <Grid Grid.Column="0">
+                    <!-- TAB 1: SAME-BANK TRANSFER (FREE) -->
+                    <Border Style="{StaticResource ModernCard}" Padding="24"
+                            Visibility="{Binding IsSameBankTab, Converter={StaticResource BoolToVisConverter}}">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="APX Bank Same-Bank Transfer" Foreground="{StaticResource BrushTextPrimary}" FontSize="16" FontWeight="Bold"/>
+                                    <TextBlock Text="Real-time instant settlement across APX Bank PLC network" Foreground="{StaticResource BrushTextMuted}" FontSize="11" Margin="0,2,0,0"/>
+                                </StackPanel>
+                                <Border Grid.Column="1" Background="{StaticResource BrushEmeraldPill}" CornerRadius="6" Padding="8,3" VerticalAlignment="Center">
+                                    <TextBlock Text="FEE: ৳0.00 (FREE)" Foreground="{StaticResource BrushEmeraldDark}" FontSize="11" FontWeight="Bold"/>
+                                </Border>
+                            </Grid>
+
+                            <!-- Mode Toggle: Own Account vs Another APX Bank Customer -->
+                            <Border Background="#F1F5F9" BorderBrush="{StaticResource BrushBorderSubtle}" BorderThickness="1" CornerRadius="8" Padding="3" Margin="0,0,0,14">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/><ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Button Grid.Column="0" Style="{StaticResource TabPillBtn}" Content="Between My Accounts" Height="32" FontSize="12" HorizontalAlignment="Stretch"
+                                            Command="{Binding SetSameBankModeCommand}" CommandParameter="Own"/>
+                                    <Button Grid.Column="1" Style="{StaticResource TabPillBtn}" Content="To Other APX Bank Customer" Height="32" FontSize="12" HorizontalAlignment="Stretch"
+                                            Command="{Binding SetSameBankModeCommand}" CommandParameter="Peer"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- Source Account -->
+                            <TextBlock Text="SOURCE ACCOUNT" Foreground="{StaticResource BrushTextMuted}" FontSize="10" FontWeight="Bold" Margin="0,0,0,4"/>
+                            <ComboBox Style="{StaticResource ModernComboBox}" SelectedItem="{Binding SelectedAccount, Mode=TwoWay}" ItemsSource="{Binding Accounts}" DisplayMemberPath="Name" Margin="0,0,0,14"/>
+
+                            <!-- If Own Account: Destination Account Picker -->
+                            <StackPanel Visibility="{Binding IsSameBankOwnAccounts, Converter={StaticResource BoolToVisConverter}}">
+                                <TextBlock Text="DESTINATION ACCOUNT" Foreground="{StaticResource BrushTextMuted}" FontSize="10" FontWeight="Bold" Margin="0,0,0,4"/>
+                                <ComboBox Style="{StaticResource ModernComboBox}" SelectedItem="{Binding SelectedTargetAccount, Mode=TwoWay}" ItemsSource="{Binding Accounts}" DisplayMemberPath="Name" Margin="0,0,0,14"/>
+                            </StackPanel>
+
+                            <!-- If Peer: Recipient Account Number/Email -->
+                            <StackPanel Visibility="{Binding IsSameBankPeer, Converter={StaticResource BoolToVisConverter}}">
+                                <TextBlock Text="RECIPIENT APX BANK ACCOUNT / USER ID" Foreground="{StaticResource BrushTextMuted}" FontSize="10" FontWeight="Bold" Margin="0,0,0,4"/>
+                                <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding SameBankRecipientInput, Mode=TwoWay}" Margin="0,0,0,14"/>
+                            </StackPanel>
+
+                            <!-- Amount -->
+                            <TextBlock Text="TRANSFER AMOUNT (BDT)" Foreground="{StaticResource BrushTextMuted}" FontSize="10" FontWeight="Bold" Margin="0,0,0,4"/>
+                            <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding SameBankAmount, Mode=TwoWay}" Margin="0,0,0,8"/>
+
+                            <Grid Margin="0,0,0,14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="0" Style="{StaticResource ChipBtn}" Content="৳500" Margin="2,0" Command="{Binding QuickAmountCommand}" CommandParameter="500"/>
+                                <Button Grid.Column="1" Style="{StaticResource ChipBtn}" Content="৳1,000" Margin="2,0" Command="{Binding QuickAmountCommand}" CommandParameter="1000"/>
+                                <Button Grid.Column="2" Style="{StaticResource ChipBtn}" Content="৳2,500" Margin="2,0" Command="{Binding QuickAmountCommand}" CommandParameter="2500"/>
+                                <Button Grid.Column="3" Style="{StaticResource ChipBtn}" Content="৳5,000" Margin="2,0" Command="{Binding QuickAmountCommand}" CommandParameter="5000"/>
+                                <Button Grid.Column="4" Style="{StaticResource ChipBtn}" Content="৳10,000" Margin="2,0" Command="{Binding QuickAmountCommand}" CommandParameter="10000"/>
+                            </Grid>
+
+                            <!-- Note -->
+                            <TextBlock Text="TRANSFER NOTE / REFERENCE" Foreground="{StaticResource BrushTextMuted}" FontSize="10" FontWeight="Bold" Margin="0,0,0,4"/>
+                            <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding SameBankNote, Mode=TwoWay}" Margin="0,0,0,16"/>
+
+                            <!-- Zero Fee Highlight Banner -->
+                            <Border Background="{StaticResource BrushEmeraldPill}" BorderBrush="#A7F3D0" BorderThickness="1" CornerRadius="8" Padding="12,10" Margin="0,0,0,18">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Text="Same-Bank Free Transfer Guarantee" Foreground="{StaticResource BrushEmeraldDark}" FontSize="12" FontWeight="Bold"/>
+                                        <TextBlock Text="No wire or interchange tariffs applied for internal network transactions." Foreground="#065F46" FontSize="11"/>
+                                    </StackPanel>
+                                    <TextBlock Grid.Column="1" Text="৳0.00" Foreground="{StaticResource BrushEmeraldDark}" FontSize="18" FontWeight="Bold" VerticalAlignment="Center"/>
+                                </Grid>
+                            </Border>
+
+                            <Button Style="{StaticResource PrimaryBtn}" Height="46" HorizontalAlignment="Stretch" Command="{Binding ExecuteSameBankTransferCommand}">
+                                <TextBlock Text="Authorize ৳0.00 Free Transfer" FontWeight="Bold" FontSize="14"/>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- TAB 2: EXTERNAL BANGLADESHI BANK TRANSFER -->
+                    <Border Style="{StaticResource ModernCard}" Padding="24"
+                            Visibility="{Binding IsExternalBdTab, Converter={StaticResource BoolToVisConverter}}">
+                        <StackPanel>
+                            <TextBlock Text="Bangladeshi National Bank Transfer" Foreground="{StaticResource BrushTextPrimary}" FontSize="16" FontWeight="Bold" Margin="0,0,0,2"/>
+                            <TextBlock Text="Connect via Bangladesh Bank NPSB, BEFTN, RTGS, or MFS wallets." Foreground="{StaticResource BrushTextMuted}" FontSize="11" Margin="0,0,0,14"/>
+
+                            <!-- Source Account -->
+                            <TextBlock Text="SOURCE ACCOUNT" Foreground="{StaticResource BrushTextMuted}" FontSize="10" FontWeight="Bold" Margin="0,0,0,4"/>
+                            <ComboBox Style="{StaticResource ModernComboBox}" SelectedItem="{Binding SelectedAccount, Mode=TwoWay}" ItemsSource="{Binding Accounts}" DisplayMemberPath="Name" Margin="0,0,0,12"/>
+
+                            <!-- Destination Bank & Channel -->
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="12"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="DESTINATION BANK" Foreground="{StaticResource BrushTextMuted}" FontSize="10" FontWeight="Bold" Margin="0,0,0,4"/>
+                                    <ComboBox Style="{StaticResource ModernComboBox}" SelectedItem="{Binding SelectedBdBank, Mode=TwoWay}" ItemsSource="{Binding SupportedBanks}" DisplayMemberPath="BankName"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="TRANSFER CHANNEL / RAIL" Foreground="{StaticResource BrushTextMuted}" FontSize="10" FontWeight="Bold" Margin="0,0,0,4"/>
+                                    <ComboBox Style="{StaticResource ModernComboBox}" SelectedItem="{Binding SelectedBdChannel, Mode=TwoWay}" ItemsSource="{Binding BdChannels}"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Routing Number & Account Number -->
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="12"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="ROUTING NUMBER" Foreground="{StaticResource BrushTextMuted}" FontSize="10" FontWeight="Bold" Margin="0,0,0,4"/>
+                                    <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding BdRoutingNumber, Mode=TwoWay}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="BENEFICIARY ACCOUNT / WALLET NO" Foreground="{StaticResource BrushTextMuted}" FontSize="10" FontWeight="Bold" Margin="0,0,0,4"/>
+                                    <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding BdRecipientAccount, Mode=TwoWay}"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Recipient Full Name -->
+                            <TextBlock Text="RECIPIENT FULL NAME" Foreground="{StaticResource BrushTextMuted}" FontSize="10" FontWeight="Bold" Margin="0,0,0,4"/>
+                            <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding BdRecipientName, Mode=TwoWay}" Margin="0,0,0,12"/>
+
+                            <!-- Amount -->
+                            <TextBlock Text="TRANSFER AMOUNT (BDT)" Foreground="{StaticResource BrushTextMuted}" FontSize="10" FontWeight="Bold" Margin="0,0,0,4"/>
+                            <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding BdAmount, Mode=TwoWay}" Margin="0,0,0,8"/>
+
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="0" Style="{StaticResource ChipBtn}" Content="৳1,000" Margin="2,0" Command="{Binding QuickAmountCommand}" CommandParameter="1000"/>
+                                <Button Grid.Column="1" Style="{StaticResource ChipBtn}" Content="৳5,000" Margin="2,0" Command="{Binding QuickAmountCommand}" CommandParameter="5000"/>
+                                <Button Grid.Column="2" Style="{StaticResource ChipBtn}" Content="৳10,000" Margin="2,0" Command="{Binding QuickAmountCommand}" CommandParameter="10000"/>
+                                <Button Grid.Column="3" Style="{StaticResource ChipBtn}" Content="৳25,000" Margin="2,0" Command="{Binding QuickAmountCommand}" CommandParameter="25000"/>
+                                <Button Grid.Column="4" Style="{StaticResource ChipBtn}" Content="৳50,000" Margin="2,0" Command="{Binding QuickAmountCommand}" CommandParameter="50000"/>
+                            </Grid>
+
+                            <!-- Note -->
+                            <TextBlock Text="PURPOSE / PAYMENT REFERENCE" Foreground="{StaticResource BrushTextMuted}" FontSize="10" FontWeight="Bold" Margin="0,0,0,4"/>
+                            <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding BdNote, Mode=TwoWay}" Margin="0,0,0,12"/>
+
+                            <!-- Cost Breakdown Card -->
+                            <Border Background="#F8FAFC" BorderBrush="{StaticResource BrushBorderSubtle}" BorderThickness="1" CornerRadius="8" Padding="14,10" Margin="0,0,0,18">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding SelectedBdChannel}" Foreground="{StaticResource BrushCyan}" FontSize="11" FontWeight="Bold"/>
+                                        <TextBlock Text="{Binding BdFeeNotice}" Foreground="{StaticResource BrushTextMuted}" FontSize="11" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" HorizontalAlignment="Right">
+                                        <TextBlock Text="Total Debit" Foreground="{StaticResource BrushTextMuted}" FontSize="10" HorizontalAlignment="Right"/>
+                                        <TextBlock Text="{Binding BdTotalDebit, Converter={StaticResource AmountPrefixConverter}}" Foreground="{StaticResource BrushTextPrimary}" FontSize="15" FontWeight="Bold" HorizontalAlignment="Right"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <Button Style="{StaticResource PrimaryBtn}" Height="46" HorizontalAlignment="Stretch" Command="{Binding ExecuteBdTransferCommand}">
+                                <TextBlock Text="Authorize &amp; Dispatch Transfer" FontWeight="Bold" FontSize="14"/>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- TAB 3: PAY VIA CARD -->
+                    <Border Style="{StaticResource ModernCard}" Padding="24"
+                            Visibility="{Binding IsCardPayTab, Converter={StaticResource BoolToVisConverter}}">
+                        <StackPanel>
+                            <TextBlock Text="Pay via Card (Utilities &amp; Services)" Foreground="{StaticResource BrushTextPrimary}" FontSize="16" FontWeight="Bold" Margin="0,0,0,2"/>
+                            <TextBlock Text="Instant settlement for utility bills, internet providers, and merchants." Foreground="{StaticResource BrushTextMuted}" FontSize="11" Margin="0,0,0,14"/>
+
+                            <!-- Active Card Selector -->
+                            <TextBlock Text="SELECT PAYMENT CARD" Foreground="{StaticResource BrushTextMuted}" FontSize="10" FontWeight="Bold" Margin="0,0,0,4"/>
+                            <ComboBox Style="{StaticResource ModernComboBox}" SelectedItem="{Binding SelectedPaymentCard, Mode=TwoWay}" ItemsSource="{Binding Cards}" DisplayMemberPath="MaskedNumber" Margin="0,0,0,12"/>
+
+                            <!-- Biller Category -->
+                            <TextBlock Text="UTILITY / SERVICE BILLER" Foreground="{StaticResource BrushTextMuted}" FontSize="10" FontWeight="Bold" Margin="0,0,0,4"/>
+                            <ComboBox Style="{StaticResource ModernComboBox}" SelectedItem="{Binding SelectedBiller, Mode=TwoWay}" ItemsSource="{Binding BillerCategories}" Margin="0,0,0,12"/>
+
+                            <!-- Customer / Account Number -->
+                            <TextBlock Text="BILL / METER / CUSTOMER NO" Foreground="{StaticResource BrushTextMuted}" FontSize="10" FontWeight="Bold" Margin="0,0,0,4"/>
+                            <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding BillerAccountNo, Mode=TwoWay}" Margin="0,0,0,12"/>
+
+                            <!-- Amount -->
+                            <TextBlock Text="BILL AMOUNT (BDT)" Foreground="{StaticResource BrushTextMuted}" FontSize="10" FontWeight="Bold" Margin="0,0,0,4"/>
+                            <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding CardPayAmount, Mode=TwoWay}" Margin="0,0,0,8"/>
+
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="0" Style="{StaticResource ChipBtn}" Content="৳500" Margin="2,0" Command="{Binding QuickAmountCommand}" CommandParameter="500"/>
+                                <Button Grid.Column="1" Style="{StaticResource ChipBtn}" Content="৳1,000" Margin="2,0" Command="{Binding QuickAmountCommand}" CommandParameter="1000"/>
+                                <Button Grid.Column="2" Style="{StaticResource ChipBtn}" Content="৳2,500" Margin="2,0" Command="{Binding QuickAmountCommand}" CommandParameter="2500"/>
+                                <Button Grid.Column="3" Style="{StaticResource ChipBtn}" Content="৳5,000" Margin="2,0" Command="{Binding QuickAmountCommand}" CommandParameter="5000"/>
+                                <Button Grid.Column="4" Style="{StaticResource ChipBtn}" Content="৳10,000" Margin="2,0" Command="{Binding QuickAmountCommand}" CommandParameter="10000"/>
+                            </Grid>
+
+                            <!-- Security Verification CVV -->
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="12"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="CARD CVV (3-DIGIT)" Foreground="{StaticResource BrushTextMuted}" FontSize="10" FontWeight="Bold" Margin="0,0,0,4"/>
+                                    <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding CardPayCvv, Mode=TwoWay}" MaxLength="3"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="REMARKS / MONTH" Foreground="{StaticResource BrushTextMuted}" FontSize="10" FontWeight="Bold" Margin="0,0,0,4"/>
+                                    <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding CardPayNote, Mode=TwoWay}"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Card Surcharge & Total -->
+                            <Border Background="#F8FAFC" BorderBrush="{StaticResource BrushBorderSubtle}" BorderThickness="1" CornerRadius="8" Padding="14,10" Margin="0,0,0,18">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Text="E-Commerce Card Processing" Foreground="{StaticResource BrushCyan}" FontSize="11" FontWeight="Bold"/>
+                                        <TextBlock Text="Convenience Tariff: ৳10.00 | Instant Biller Clearing" Foreground="{StaticResource BrushTextMuted}" FontSize="11" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <Button Style="{StaticResource PrimaryBtn}" Height="46" HorizontalAlignment="Stretch" Command="{Binding ExecuteCardBillPaymentCommand}">
+                                <TextBlock Text="Pay Utility Bill with Card" FontWeight="Bold" FontSize="14"/>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <!-- RIGHT COLUMN: Rails Status & Frequent Beneficiaries -->
+                <StackPanel Grid.Column="2">
+                    <!-- Clearing Rails Live Monitor -->
+                    <Border Style="{StaticResource ModernCard}" Padding="20" Margin="0,0,0,16">
+                        <StackPanel>
+                            <TextBlock Text="Bangladesh Clearing Rails Status" Foreground="{StaticResource BrushTextPrimary}" FontSize="14" FontWeight="Bold" Margin="0,0,0,12"/>
+                            
+                            <!-- NPSB -->
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="NPSB (National Payment Switch Bangladesh)" Foreground="{StaticResource BrushTextPrimary}" FontSize="12" FontWeight="SemiBold"/>
+                                    <TextBlock Text="Instant 24/7 card &amp; account settlement (limit ৳300,000)" Foreground="{StaticResource BrushTextMuted}" FontSize="10"/>
+                                </StackPanel>
+                                <Border Grid.Column="1" Background="{StaticResource BrushEmeraldPill}" CornerRadius="6" Padding="6,2" VerticalAlignment="Center">
+                                    <TextBlock Text="ONLINE" Foreground="{StaticResource BrushEmeraldDark}" FontSize="10" FontWeight="Bold"/>
+                                </Border>
+                            </Grid>
+
+                            <!-- BEFTN -->
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="BEFTN (Electronic Fund Transfer)" Foreground="{StaticResource BrushTextPrimary}" FontSize="12" FontWeight="SemiBold"/>
+                                    <TextBlock Text="Batch processing twice daily (৳0 fee)" Foreground="{StaticResource BrushTextMuted}" FontSize="10"/>
+                                </StackPanel>
+                                <Border Grid.Column="1" Background="{StaticResource BrushEmeraldPill}" CornerRadius="6" Padding="6,2" VerticalAlignment="Center">
+                                    <TextBlock Text="ONLINE" Foreground="{StaticResource BrushEmeraldDark}" FontSize="10" FontWeight="Bold"/>
+                                </Border>
+                            </Grid>
+
+                            <!-- RTGS -->
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="RTGS (Real-Time Gross Settlement)" Foreground="{StaticResource BrushTextPrimary}" FontSize="12" FontWeight="SemiBold"/>
+                                    <TextBlock Text="High-value settlement &gt; ৳100,000 (instant banking hours)" Foreground="{StaticResource BrushTextMuted}" FontSize="10"/>
+                                </StackPanel>
+                                <Border Grid.Column="1" Background="{StaticResource BrushEmeraldPill}" CornerRadius="6" Padding="6,2" VerticalAlignment="Center">
+                                    <TextBlock Text="ONLINE" Foreground="{StaticResource BrushEmeraldDark}" FontSize="10" FontWeight="Bold"/>
+                                </Border>
+                            </Grid>
+
+                            <!-- MFS Gateways -->
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="MFS Gateways (bKash, Nagad, Rocket)" Foreground="{StaticResource BrushTextPrimary}" FontSize="12" FontWeight="SemiBold"/>
+                                    <TextBlock Text="Direct API linked disbursement" Foreground="{StaticResource BrushTextMuted}" FontSize="10"/>
+                                </StackPanel>
+                                <Border Grid.Column="1" Background="{StaticResource BrushEmeraldPill}" CornerRadius="6" Padding="6,2" VerticalAlignment="Center">
+                                    <TextBlock Text="OPERATIONAL" Foreground="{StaticResource BrushEmeraldDark}" FontSize="10" FontWeight="Bold"/>
+                                </Border>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Saved Beneficiaries Directory -->
+                    <Border Style="{StaticResource ModernCard}" Padding="20">
+                        <StackPanel>
+                            <TextBlock Text="Frequent Beneficiaries" Foreground="{StaticResource BrushTextPrimary}" FontSize="14" FontWeight="Bold" Margin="0,0,0,12"/>
+                            <ItemsControl ItemsSource="{Binding Beneficiaries}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Button Background="Transparent" BorderThickness="0" Padding="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                                                Command="{Binding ElementName=TransfersRoot, Path=DataContext.SelectBeneficiaryCommand}"
+                                                CommandParameter="{Binding}" Margin="0,0,0,8">
+                                            <Border CornerRadius="8" Padding="10,8" Background="#F8FAFC" BorderBrush="{StaticResource BrushBorderSubtle}" BorderThickness="1">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <Border Grid.Column="0" Width="32" Height="32" CornerRadius="16" Background="#E2E8F0" Margin="0,0,10,0">
+                                                        <TextBlock Text="{Binding AvatarInitials}" Foreground="{StaticResource BrushTextPrimary}" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding Name}" Foreground="{StaticResource BrushTextPrimary}" FontSize="12" FontWeight="SemiBold"/>
+                                                        <TextBlock Text="{Binding BankName}" Foreground="{StaticResource BrushTextMuted}" FontSize="10"/>
+                                                    </StackPanel>
+                                                    <TextBlock Grid.Column="2" Text="{Binding AccountNumber}" Foreground="{StaticResource BrushTextSecondary}" FontSize="11" VerticalAlignment="Center"/>
+                                                </Grid>
+                                            </Border>
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </Grid>
+    </ScrollViewer>
+</UserControl>

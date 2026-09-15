@@ -1,0 +1,729 @@
+<Window
+    x:Class="ApexBank.WinUI.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:views="using:ApexBank.WinUI.Views"
+    xmlns:viewModels="using:ApexBank.ViewModels"
+    mc:Ignorable="d"
+    Title="APX Bank PLC - Modern Digital Banking">
+
+    <Grid x:Name="RootGrid" Background="{StaticResource BrushBg}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="48"/> <!-- Custom Title Bar -->
+            <RowDefinition Height="*"/>  <!-- Main Content Area -->
+        </Grid.RowDefinitions>
+
+        <!-- ==================================================================== -->
+        <!-- CUSTOM TITLE BAR (Windows 11 Mica Glass Integrated Header)            -->
+        <!-- ==================================================================== -->
+        <Border Grid.Row="0" x:Name="AppTitleBar" Background="{StaticResource BrushSidebar}" BorderBrush="{StaticResource BrushBorderSubtle}" BorderThickness="0,0,0,1">
+            <Grid Margin="18,0,14,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="220"/> <!-- Brand & Logo -->
+                    <ColumnDefinition Width="*"/>   <!-- Center: Search Pill & Sync Status -->
+                    <ColumnDefinition Width="Auto"/> <!-- Right: Notifications & User Avatar -->
+                </Grid.ColumnDefinitions>
+
+                <!-- Brand Logo & Name -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Width="32" Height="32" CornerRadius="8" Margin="0,0,10,0" Background="{StaticResource BrushEmeraldPill}" BorderBrush="#A7F3D0" BorderThickness="1">
+                        <Path Data="{StaticResource IconBankPillars}" Fill="{StaticResource BrushEmeraldDark}" Width="16" Height="16" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <TextBlock Text="APX Bank PLC" Foreground="{StaticResource BrushTextPrimary}" FontSize="17" FontWeight="Bold" VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <!-- Center: Search Pill & Live Database Status (Visible only when authenticated) -->
+                <Grid Grid.Column="1" Margin="12,0,16,0" Visibility="{Binding IsAuthenticated, Converter={StaticResource BoolToVisConverter}}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Search Pill Input -->
+                    <Border Grid.Column="0" Background="#F1F5F9" BorderBrush="{StaticResource BrushBorderSubtle}" BorderThickness="1" CornerRadius="10" Width="280" Height="32" VerticalAlignment="Center">
+                        <Grid Margin="10,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Path Grid.Column="0" Data="{StaticResource IconSearch}" Fill="{StaticResource BrushTextMuted}" Width="12" Height="12" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBox Grid.Column="1" Text="{Binding SearchText, Mode=TwoWay}" PlaceholderText="Search transactions, payees..."
+                                     Background="Transparent" BorderThickness="0" VerticalAlignment="Center" FontSize="12" Foreground="{StaticResource BrushTextPrimary}"
+                                     Padding="0"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Center Security Status Pill -->
+                    <Border Grid.Column="2" Background="{StaticResource BrushEmeraldPill}" BorderBrush="#A7F3D0" BorderThickness="1" CornerRadius="12" Padding="12,4" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal">
+                            <Ellipse Width="7" Height="7" Fill="{StaticResource BrushEmerald}" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="LIVE EXCEL DATABASE • SYNCHRONIZED" Foreground="{StaticResource BrushEmeraldDark}" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <!-- Right Quick Info & User Avatar Chip -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- Notification Bell Button (Visible only when authenticated) -->
+                    <Button Style="{StaticResource TitleBarBtn}" Command="{Binding ToggleNotificationsCommand}" Width="36" Height="32" Margin="0,0,8,0"
+                            Visibility="{Binding IsAuthenticated, Converter={StaticResource BoolToVisConverter}}">
+                        <Grid>
+                            <Path Data="{StaticResource IconBell}" Fill="{StaticResource BrushTextSecondary}" Width="15" Height="15" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <Ellipse Width="8" Height="8" Fill="{StaticResource BrushEmerald}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,1,1,0"
+                                     Visibility="{Binding HasUnreadNotifications, Converter={StaticResource BoolToVisConverter}}"/>
+                        </Grid>
+                    </Button>
+
+                    <!-- User Profile Avatar Pill -->
+                    <Border Background="#F8FAFC" BorderBrush="{StaticResource BrushBorderSubtle}" BorderThickness="1" CornerRadius="16" Padding="3,2,8,2" Margin="0,0,12,0" VerticalAlignment="Center"
+                            Visibility="{Binding IsAuthenticated, Converter={StaticResource BoolToVisConverter}}">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <Border Width="26" Height="26" CornerRadius="13" Background="{StaticResource BrushEmerald}" Margin="0,0,8,0">
+                                <TextBlock Text="{Binding CurrentUserInitials}" Foreground="White" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="{Binding CurrentUserName}" Foreground="{StaticResource BrushTextPrimary}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <Button Style="{StaticResource TitleBarBtn}" Width="20" Height="20" ToolTipService.ToolTip="Sign Out" Command="{Binding LogoutCommand}" VerticalAlignment="Center">
+                                <Path Data="{StaticResource IconClose}" Fill="{StaticResource BrushRose}" Width="8" Height="8" Stretch="Uniform"/>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ==================================================================== -->
+        <!-- MAIN WORKSPACE: SIDEBAR + CONTENT VIEWS STAGE                        -->
+        <!-- ==================================================================== -->
+        <Grid Grid.Row="1">
+            <!-- AUTHENTICATED WORKSPACE -->
+            <Grid Visibility="{Binding IsAuthenticated, Converter={StaticResource BoolToVisConverter}}">
+                <NavigationView x:Name="MainNavView"
+                                PaneDisplayMode="Left"
+                                IsBackButtonVisible="Collapsed"
+                                IsSettingsVisible="False"
+                                SelectionChanged="MainNavView_SelectionChanged"
+                                OpenPaneLength="220"
+                                CompactPaneLength="54">
+                    <NavigationView.MenuItems>
+                        <NavigationViewItem Content="Dashboard" Tag="Dashboard">
+                            <NavigationViewItem.Icon>
+                                <SymbolIcon Symbol="Home"/>
+                            </NavigationViewItem.Icon>
+                        </NavigationViewItem>
+                        <NavigationViewItem Content="Transfers &amp; Pay" Tag="Transfers">
+                            <NavigationViewItem.Icon>
+                                <SymbolIcon Symbol="Send"/>
+                            </NavigationViewItem.Icon>
+                        </NavigationViewItem>
+                        <NavigationViewItem Content="Cards Studio" Tag="Cards">
+                            <NavigationViewItem.Icon>
+                                <SymbolIcon Symbol="Shop"/>
+                            </NavigationViewItem.Icon>
+                        </NavigationViewItem>
+                        <NavigationViewItem Content="Analytics &amp; Budget" Tag="Analytics">
+                            <NavigationViewItem.Icon>
+                                <SymbolIcon Symbol="OutlineStar"/>
+                            </NavigationViewItem.Icon>
+                        </NavigationViewItem>
+                        <NavigationViewItem Content="All Transactions" Tag="Transactions">
+                            <NavigationViewItem.Icon>
+                                <SymbolIcon Symbol="List"/>
+                            </NavigationViewItem.Icon>
+                        </NavigationViewItem>
+                    </NavigationView.MenuItems>
+
+                    <!-- Pane Footer: Quick Deposit CTA -->
+                    <NavigationView.PaneFooter>
+                        <StackPanel Margin="12,8,12,14">
+                            <Border Background="#F8FAFC" BorderBrush="{StaticResource BrushBorderSubtle}" BorderThickness="1" CornerRadius="10" Padding="12,10" Margin="0,0,0,10">
+                                <StackPanel>
+                                    <TextBlock Text="NET ASSETS" Foreground="{StaticResource BrushTextMuted}" FontSize="9" FontWeight="Bold" Margin="0,0,0,2"/>
+                                    <TextBlock Text="{Binding TotalNetWorth, Converter={StaticResource AmountPrefixConverter}}" Foreground="{StaticResource BrushTextPrimary}" FontSize="15" FontWeight="Bold"/>
+                                    <TextBlock Text="Excel DB Connected" Foreground="{StaticResource BrushEmeraldDark}" FontSize="10" FontWeight="SemiBold" Margin="0,2,0,0"/>
+                                </StackPanel>
+                            </Border>
+                            <Button Style="{StaticResource PrimaryBtn}" Height="36" HorizontalAlignment="Stretch" Command="{Binding OpenDepositDialogCommand}">
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <Path Data="{StaticResource IconPlus}" Fill="White" Width="10" Height="10" Stretch="Uniform" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Deposit Funds" FontWeight="Bold" FontSize="12" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </NavigationView.PaneFooter>
+
+                    <!-- Content: Views Switcher Container -->
+                    <Grid Background="{StaticResource BrushBg}">
+                        <!-- VIEW 1: DASHBOARD -->
+                        <views:DashboardView Visibility="{Binding CurrentView, Converter={StaticResource EqToVisConverter}, ConverterParameter=Dashboard}"/>
+
+                        <!-- VIEW 2: TRANSFERS & PAY -->
+                        <views:TransfersView Visibility="{Binding CurrentView, Converter={StaticResource EqToVisConverter}, ConverterParameter=Transfers}"/>
+
+                        <!-- VIEW 3: CARDS STUDIO -->
+                        <views:CardsView Visibility="{Binding CurrentView, Converter={StaticResource EqToVisConverter}, ConverterParameter=Cards}"/>
+
+                        <!-- VIEW 4: ANALYTICS & BUDGET -->
+                        <views:AnalyticsView Visibility="{Binding CurrentView, Converter={StaticResource EqToVisConverter}, ConverterParameter=Analytics}"/>
+
+                        <!-- VIEW 5: ALL TRANSACTIONS LEDGER -->
+                        <views:TransactionsView Visibility="{Binding CurrentView, Converter={StaticResource EqToVisConverter}, ConverterParameter=Transactions}"/>
+                    </Grid>
+                </NavigationView>
+            </Grid>
+
+            <!-- ================================================================ -->
+            <!-- AUTHENTICATION & REGISTRATION SCREEN (When Logged Out)            -->
+            <!-- ================================================================ -->
+            <Grid Visibility="{Binding IsAuthenticated, Converter={StaticResource InvBoolToVisConverter}}" Background="{StaticResource BrushAuthBgGradient}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="24,32">
+                    <!-- Master Dual-Pane Card Container -->
+                    <Border MaxWidth="980" HorizontalAlignment="Center" VerticalAlignment="Center"
+                            Background="#FFFFFF" BorderBrush="{StaticResource BrushBorderSubtle}" BorderThickness="1" CornerRadius="20">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="420"/> <!-- Left: Institutional Showcase Hero -->
+                                <ColumnDefinition Width="560"/> <!-- Right: Secure Auth & Access Portal -->
+                            </Grid.ColumnDefinitions>
+
+                            <!-- ======================================================== -->
+                            <!-- LEFT PANE: INSTITUTIONAL BRAND & SECURITY SHOWCASE        -->
+                            <!-- ======================================================== -->
+                            <Border Grid.Column="0" Background="{StaticResource BrushAuthHeroGradient}" CornerRadius="20,0,0,20" Padding="36,36">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/> <!-- Top Brand & Live Badge -->
+                                        <RowDefinition Height="*"/>    <!-- Feature Value Props -->
+                                        <RowDefinition Height="Auto"/> <!-- Bottom Trust & Regulation -->
+                                    </Grid.RowDefinitions>
+
+                                    <!-- Top Brand & Live Status -->
+                                    <StackPanel Grid.Row="0">
+                                        <!-- Live Engine Status Badge -->
+                                        <Border CornerRadius="12" Background="#152E38" BorderBrush="#065F46" BorderThickness="1"
+                                                Padding="10,5" HorizontalAlignment="Left" Margin="0,0,0,24">
+                                            <StackPanel Orientation="Horizontal">
+                                                <Ellipse Width="7" Height="7" Fill="{StaticResource BrushEmerald}" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                                <TextBlock Text="CORE BANKING ENGINE • ONLINE" Foreground="#6EE7B7" FontSize="10" FontWeight="Bold" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <!-- Brand Monogram & Name -->
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                            <Border Width="48" Height="48" CornerRadius="14" Background="#064E3B" BorderBrush="#10B981" BorderThickness="1.5" Margin="0,0,14,0" VerticalAlignment="Center">
+                                                <Path Data="{StaticResource IconBankPillars}" Fill="#34D399" Width="24" Height="24" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="APX Bank PLC" Foreground="White" FontSize="22" FontWeight="Bold"/>
+                                                <TextBlock Text="Corporate &amp; Retail Treasury" Foreground="#94A3B8" FontSize="12"/>
+                                            </StackPanel>
+                                        </StackPanel>
+
+                                        <TextBlock Text="Next-generation institutional financial cloud and real-time clearing gateway."
+                                                   Foreground="#CBD5E1" FontSize="12" TextWrapping="Wrap" Margin="0,8,0,24" LineHeight="18"/>
+                                    </StackPanel>
+
+                                    <!-- Feature Highlights -->
+                                    <StackPanel Grid.Row="1" VerticalAlignment="Center" Margin="0,10,0,20">
+                                        <!-- Feature 1: Multi-Rail Clearing -->
+                                        <Border Background="#0D1E2D" BorderBrush="#1E293B" BorderThickness="1" CornerRadius="12" Padding="14,12" Margin="0,0,0,12">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Border Grid.Column="0" Width="36" Height="36" CornerRadius="10" Background="#064E3B" VerticalAlignment="Center" Margin="0,0,12,0">
+                                                    <Path Data="{StaticResource IconIncome}" Fill="#34D399" Width="16" Height="16" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                    <TextBlock Text="Multi-Rail Settlement" Foreground="White" FontSize="12" FontWeight="SemiBold"/>
+                                                    <TextBlock Text="Real-time clearing via NPSB, BEFTN &amp; RTGS networks." Foreground="#94A3B8" FontSize="11" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+
+                                        <!-- Feature 2: Hardware Cryptography -->
+                                        <Border Background="#0D1E2D" BorderBrush="#1E293B" BorderThickness="1" CornerRadius="12" Padding="14,12" Margin="0,0,0,12">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Border Grid.Column="0" Width="36" Height="36" CornerRadius="10" Background="#0C4A6E" VerticalAlignment="Center" Margin="0,0,12,0">
+                                                    <Path Data="{StaticResource IconShieldCheck}" Fill="#38BDF8" Width="16" Height="16" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                    <TextBlock Text="Cryptographic Vault" Foreground="White" FontSize="12" FontWeight="SemiBold"/>
+                                                    <TextBlock Text="Hardware-grade AES-256-GCM data encryption." Foreground="#94A3B8" FontSize="11" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+
+                                        <!-- Feature 3: Smart Cards & Analytics -->
+                                        <Border Background="#0D1E2D" BorderBrush="#1E293B" BorderThickness="1" CornerRadius="12" Padding="14,12">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Border Grid.Column="0" Width="36" Height="36" CornerRadius="10" Background="#1E1B4B" VerticalAlignment="Center" Margin="0,0,12,0">
+                                                    <Path Data="{StaticResource IconCards}" Fill="#A5B4FC" Width="16" Height="16" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                    <TextBlock Text="Virtual Debit Studio" Foreground="White" FontSize="12" FontWeight="SemiBold"/>
+                                                    <TextBlock Text="Dynamic limits, one-touch lock &amp; instant statement export." Foreground="#94A3B8" FontSize="11" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </StackPanel>
+
+                                    <!-- Bottom Regulatory & Compliance Pill -->
+                                    <Border Grid.Row="2" Background="#071822" BorderBrush="#163140" BorderThickness="1" CornerRadius="10" Padding="12,10">
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Path Data="{StaticResource IconLock}" Fill="#10B981" Width="13" Height="13" Stretch="Uniform" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                            <TextBlock Text="Regulated by Bangladesh Bank • ISO 27001 Certified" Foreground="#94A3B8" FontSize="10" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+                            </Border>
+
+                            <!-- ======================================================== -->
+                            <!-- RIGHT PANE: INTERACTIVE AUTHENTICATION & REGISTRATION    -->
+                            <!-- ======================================================== -->
+                            <Border Grid.Column="1" Background="#FFFFFF" CornerRadius="0,20,20,0" Padding="38,36">
+                                <StackPanel>
+                                    <!-- Status Pill -->
+                                    <Border Background="{StaticResource BrushEmeraldPill}" BorderBrush="#A7F3D0" BorderThickness="1" CornerRadius="12" Padding="10,4" HorizontalAlignment="Left" Margin="0,0,0,12">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Ellipse Width="6" Height="6" Fill="{StaticResource BrushEmerald}" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                            <TextBlock Text="SECURE CLIENT ACCESS" Foreground="{StaticResource BrushEmeraldDark}" FontSize="10" FontWeight="Bold" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Context-Aware Dynamic Header -->
+                                    <Grid Margin="0,0,0,18">
+                                        <!-- Sign In Mode Header -->
+                                        <StackPanel Visibility="{Binding IsRegisterMode, Converter={StaticResource InvBoolToVisConverter}}">
+                                            <TextBlock Text="Welcome Back" Foreground="{StaticResource BrushTextPrimary}" FontSize="24" FontWeight="Bold"/>
+                                            <TextBlock Text="Sign in with your verified credentials to access your financial dashboard." Foreground="{StaticResource BrushTextSecondary}" FontSize="12" Margin="0,4,0,0"/>
+                                        </StackPanel>
+
+                                        <!-- Register Mode Header -->
+                                        <StackPanel Visibility="{Binding IsRegisterMode, Converter={StaticResource BoolToVisConverter}}">
+                                            <TextBlock Text="Open APX Bank Account" Foreground="{StaticResource BrushTextPrimary}" FontSize="24" FontWeight="Bold"/>
+                                            <TextBlock Text="Register your institutional or personal profile to begin digital banking." Foreground="{StaticResource BrushTextSecondary}" FontSize="12" Margin="0,4,0,0"/>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <!-- Interactive Segmented Tab Switcher -->
+                                    <Border Background="#F1F5F9" CornerRadius="10" Padding="4" Margin="0,0,0,20">
+                                        <Grid>
+                                            <!-- State 1: Sign In Active -->
+                                            <Grid Visibility="{Binding IsRegisterMode, Converter={StaticResource InvBoolToVisConverter}}">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <!-- Active Sign In Tab Card -->
+                                                <Border Grid.Column="0" Background="#FFFFFF" CornerRadius="8" BorderBrush="{StaticResource BrushBorderSubtle}" BorderThickness="1">
+                                                    <Button Background="Transparent" BorderThickness="0" HorizontalAlignment="Stretch" Height="36">
+                                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                            <Path Data="{StaticResource IconLock}" Fill="{StaticResource BrushEmeraldDark}" Width="12" Height="12" Stretch="Uniform" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                                            <TextBlock Text="Sign In" FontWeight="Bold" FontSize="13" Foreground="{StaticResource BrushTextPrimary}"/>
+                                                        </StackPanel>
+                                                    </Button>
+                                                </Border>
+                                                <!-- Inactive Register Tab Button -->
+                                                <Button Grid.Column="1" Style="{StaticResource PillBtn}" Height="36" HorizontalAlignment="Stretch" Command="{Binding SwitchAuthModeCommand}">
+                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                        <Path Data="{StaticResource IconUser}" Fill="{StaticResource BrushTextMuted}" Width="12" Height="12" Stretch="Uniform" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="Create Account" FontWeight="Normal" FontSize="13" Foreground="{StaticResource BrushTextMuted}"/>
+                                                    </StackPanel>
+                                                </Button>
+                                            </Grid>
+
+                                            <!-- State 2: Register Active -->
+                                            <Grid Visibility="{Binding IsRegisterMode, Converter={StaticResource BoolToVisConverter}}">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <!-- Inactive Sign In Tab Button -->
+                                                <Button Grid.Column="0" Style="{StaticResource PillBtn}" Height="36" HorizontalAlignment="Stretch" Command="{Binding SwitchAuthModeCommand}">
+                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                        <Path Data="{StaticResource IconLock}" Fill="{StaticResource BrushTextMuted}" Width="12" Height="12" Stretch="Uniform" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="Sign In" FontWeight="Normal" FontSize="13" Foreground="{StaticResource BrushTextMuted}"/>
+                                                    </StackPanel>
+                                                </Button>
+                                                <!-- Active Register Tab Card -->
+                                                <Border Grid.Column="1" Background="#FFFFFF" CornerRadius="8" BorderBrush="{StaticResource BrushBorderSubtle}" BorderThickness="1">
+                                                    <Button Background="Transparent" BorderThickness="0" HorizontalAlignment="Stretch" Height="36">
+                                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                            <Path Data="{StaticResource IconUser}" Fill="{StaticResource BrushEmeraldDark}" Width="12" Height="12" Stretch="Uniform" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                                            <TextBlock Text="Create Account" FontWeight="Bold" FontSize="13" Foreground="{StaticResource BrushTextPrimary}"/>
+                                                        </StackPanel>
+                                                    </Button>
+                                                </Border>
+                                            </Grid>
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- ==================================================== -->
+                                    <!-- TAB 1 CONTENT: SIGN IN FORM                          -->
+                                    <!-- ==================================================== -->
+                                    <StackPanel Visibility="{Binding IsRegisterMode, Converter={StaticResource InvBoolToVisConverter}}">
+                                        <!-- Username Field -->
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                            <Path Data="{StaticResource IconUser}" Fill="{StaticResource BrushEmeraldDark}" Width="12" Height="12" Stretch="Uniform" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                            <TextBlock Text="Username or Corporate ID" Foreground="{StaticResource BrushTextPrimary}" FontSize="12" FontWeight="SemiBold"/>
+                                        </StackPanel>
+                                        <TextBox Style="{StaticResource ModernTextBox}" Height="44" CornerRadius="10" Background="#F8FAFC"
+                                                 PlaceholderText="e.g. alexander or user@apxbank.com"
+                                                 Text="{Binding LoginUsername, Mode=TwoWay}" Margin="0,0,0,16"/>
+
+                                        <!-- Password Field -->
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                            <Path Data="{StaticResource IconLock}" Fill="{StaticResource BrushEmeraldDark}" Width="12" Height="12" Stretch="Uniform" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                            <TextBlock Text="Master Passcode" Foreground="{StaticResource BrushTextPrimary}" FontSize="12" FontWeight="SemiBold"/>
+                                        </StackPanel>
+                                        <PasswordBox x:Name="TxtLoginPassword" Height="44" CornerRadius="10" Background="#F8FAFC"
+                                                     PlaceholderText="Enter your secure password"
+                                                     PasswordChanged="LoginPassword_PasswordChanged" Margin="0,0,0,16"/>
+
+                                        <!-- Error Message Alert Banner -->
+                                        <Border Background="{StaticResource BrushRosePill}" BorderBrush="#FECDD3" BorderThickness="1" CornerRadius="8" Padding="12,10" Margin="0,0,0,16"
+                                                Visibility="{Binding LoginErrorMessage, Converter={StaticResource StringNullOrEmptyToVisibilityConverter}}">
+                                            <StackPanel Orientation="Horizontal">
+                                                <Path Data="{StaticResource IconClose}" Fill="{StaticResource BrushRose}" Width="12" Height="12" Stretch="Uniform" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{Binding LoginErrorMessage}" Foreground="{StaticResource BrushRose}" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <!-- Sign In Button -->
+                                        <Button Style="{StaticResource PrimaryBtn}" Height="46" HorizontalAlignment="Stretch" CornerRadius="10"
+                                                Command="{Binding LoginCommand}" CommandParameter="{Binding ElementName=TxtLoginPassword}" Margin="0,0,0,16">
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                <TextBlock Text="Sign In to APX Bank Account" FontWeight="Bold" FontSize="14" Foreground="White" VerticalAlignment="Center"/>
+                                                <Path Data="{StaticResource IconArrowRight}" Fill="White" Width="12" Height="12" Stretch="Uniform" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+
+                                        <!-- Divider with Label -->
+                                        <Grid Margin="0,0,0,16">
+                                            <Border Height="1" Background="{StaticResource BrushBorderSubtle}" VerticalAlignment="Center"/>
+                                            <Border Background="#FFFFFF" HorizontalAlignment="Center" Padding="12,0">
+                                                <TextBlock Text="OR INSTANT DEMO ACCESS" Foreground="{StaticResource BrushTextMuted}" FontSize="10" FontWeight="Bold"/>
+                                            </Border>
+                                        </Grid>
+
+                                        <!-- Elegant Quick Demo Card -->
+                                        <Button Style="{StaticResource SecondaryBtn}" Height="54" HorizontalAlignment="Stretch" CornerRadius="10"
+                                                Command="{Binding QuickDemoLoginCommand}" Margin="0,0,0,16" Padding="12,6" Background="#F8FAFC">
+                                            <Grid HorizontalAlignment="Stretch">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+
+                                                <Border Grid.Column="0" Width="34" Height="34" CornerRadius="8" Background="{StaticResource BrushEmeraldPill}" BorderBrush="#A7F3D0" BorderThickness="1" VerticalAlignment="Center">
+                                                    <Path Data="{StaticResource IconSparkles}" Fill="{StaticResource BrushEmeraldDark}" Width="15" Height="15" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+
+                                                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="12,0,0,0" HorizontalAlignment="Left">
+                                                    <TextBlock Text="Demo Account (Alexander Cross)" Foreground="{StaticResource BrushTextPrimary}" FontSize="12" FontWeight="SemiBold"/>
+                                                    <TextBlock Text="1-Click Launch • BDT Accounts, Cards &amp; Ledger" Foreground="{StaticResource BrushTextMuted}" FontSize="10"/>
+                                                </StackPanel>
+
+                                                <Border Grid.Column="2" Background="{StaticResource BrushEmeraldPill}" BorderBrush="#A7F3D0" BorderThickness="1" CornerRadius="6" Padding="8,4" VerticalAlignment="Center">
+                                                    <TextBlock Text="Quick Sign-In" Foreground="{StaticResource BrushEmeraldDark}" FontSize="11" FontWeight="Bold"/>
+                                                </Border>
+                                            </Grid>
+                                        </Button>
+
+                                        <Button Style="{StaticResource TitleBarBtn}" Height="30" Command="{Binding SwitchAuthModeCommand}" HorizontalAlignment="Center">
+                                            <TextBlock Text="Don't have an institutional account? Create one now" Foreground="{StaticResource BrushCyan}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                        </Button>
+                                    </StackPanel>
+
+                                    <!-- ==================================================== -->
+                                    <!-- TAB 2 CONTENT: REGISTER FORM                         -->
+                                    <!-- ==================================================== -->
+                                    <StackPanel Visibility="{Binding IsRegisterMode, Converter={StaticResource BoolToVisConverter}}">
+                                        <!-- Full Name -->
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                                            <Path Data="{StaticResource IconUser}" Fill="{StaticResource BrushEmeraldDark}" Width="11" Height="11" Stretch="Uniform" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                            <TextBlock Text="Full Legal Name" Foreground="{StaticResource BrushTextPrimary}" FontSize="11" FontWeight="SemiBold"/>
+                                        </StackPanel>
+                                        <TextBox Style="{StaticResource ModernTextBox}" Height="40" CornerRadius="8" Background="#F8FAFC"
+                                                 PlaceholderText="e.g. Alexander Cross"
+                                                 Text="{Binding RegFullName, Mode=TwoWay}" Margin="0,0,0,10"/>
+
+                                        <!-- Two Column: Username & Email -->
+                                        <Grid Margin="0,0,0,10">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- Username -->
+                                            <StackPanel Grid.Column="0" Margin="0,0,6,0">
+                                                <TextBlock Text="Desired Username" Foreground="{StaticResource BrushTextPrimary}" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                                                <TextBox Style="{StaticResource ModernTextBox}" Height="40" CornerRadius="8" Background="#F8FAFC"
+                                                         PlaceholderText="e.g. alexander"
+                                                         Text="{Binding RegUsername, Mode=TwoWay}"/>
+                                            </StackPanel>
+
+                                            <!-- Email -->
+                                            <StackPanel Grid.Column="1" Margin="6,0,0,0">
+                                                <TextBlock Text="Email Address" Foreground="{StaticResource BrushTextPrimary}" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                                                <TextBox Style="{StaticResource ModernTextBox}" Height="40" CornerRadius="8" Background="#F8FAFC"
+                                                         PlaceholderText="e.g. alexander@apxbank.com"
+                                                         Text="{Binding RegEmail, Mode=TwoWay}"/>
+                                            </StackPanel>
+                                        </Grid>
+
+                                        <!-- Two Column: Password & Confirm -->
+                                        <Grid Margin="0,0,0,12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- Password -->
+                                            <StackPanel Grid.Column="0" Margin="0,0,6,0">
+                                                <TextBlock Text="Password (Min 6 chars)" Foreground="{StaticResource BrushTextPrimary}" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                                                <PasswordBox x:Name="TxtRegPassword" Height="40" CornerRadius="8" Background="#F8FAFC"
+                                                             PlaceholderText="Master password"
+                                                             PasswordChanged="RegPassword_PasswordChanged"/>
+                                            </StackPanel>
+
+                                            <!-- Confirm Password -->
+                                            <StackPanel Grid.Column="1" Margin="6,0,0,0">
+                                                <TextBlock Text="Confirm Password" Foreground="{StaticResource BrushTextPrimary}" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                                                <PasswordBox x:Name="TxtRegConfirmPassword" Height="40" CornerRadius="8" Background="#F8FAFC"
+                                                             PlaceholderText="Re-enter password"
+                                                             PasswordChanged="RegConfirmPassword_PasswordChanged"/>
+                                            </StackPanel>
+                                        </Grid>
+
+                                        <!-- Error Message Alert Banner -->
+                                        <Border Background="{StaticResource BrushRosePill}" BorderBrush="#FECDD3" BorderThickness="1" CornerRadius="8" Padding="12,8" Margin="0,0,0,12"
+                                                Visibility="{Binding RegErrorMessage, Converter={StaticResource StringNullOrEmptyToVisibilityConverter}}">
+                                            <StackPanel Orientation="Horizontal">
+                                                <Path Data="{StaticResource IconClose}" Fill="{StaticResource BrushRose}" Width="12" Height="12" Stretch="Uniform" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{Binding RegErrorMessage}" Foreground="{StaticResource BrushRose}" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <!-- Create Account Button -->
+                                        <Button Style="{StaticResource PrimaryBtn}" Height="46" HorizontalAlignment="Stretch" CornerRadius="10"
+                                                Command="{Binding RegisterCommand}" Margin="0,0,0,12">
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                <TextBlock Text="Complete Registration &amp; Open Account" FontWeight="Bold" FontSize="14" Foreground="White" VerticalAlignment="Center"/>
+                                                <Path Data="{StaticResource IconArrowRight}" Fill="White" Width="12" Height="12" Stretch="Uniform" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+
+                                        <Button Style="{StaticResource TitleBarBtn}" Height="30" Command="{Binding SwitchAuthModeCommand}" HorizontalAlignment="Center">
+                                            <TextBlock Text="Already registered? Sign in to your verified account" Foreground="{StaticResource BrushCyan}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                        </Button>
+                                    </StackPanel>
+
+                                    <!-- Bottom Encryption Guarantee Line -->
+                                    <Border Margin="0,16,0,0" Padding="0,12,0,0" BorderBrush="{StaticResource BrushBorderSubtle}" BorderThickness="0,1,0,0">
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                            <Path Data="{StaticResource IconShieldCheck}" Fill="{StaticResource BrushEmeraldDark}" Width="13" Height="13" Stretch="Uniform" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                            <TextBlock Text="AES-256-GCM Hardware Encrypted • 100% Core Ledger Protection" Foreground="{StaticResource BrushTextMuted}" FontSize="10" FontWeight="SemiBold"/>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </Border>
+                </ScrollViewer>
+            </Grid>
+
+            <!-- ============================================================ -->
+            <!-- DEPOSIT FUNDS MODAL OVERLAY                                  -->
+            <!-- ============================================================ -->
+            <Border Background="#60000000" Visibility="{Binding IsDepositDialogOpen, Converter={StaticResource BoolToVisConverter}}" Canvas.ZIndex="100">
+                <Border Style="{StaticResource ModernCard}" Width="440" Padding="28" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,18">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Deposit Funds" Foreground="{StaticResource BrushTextPrimary}" FontSize="18" FontWeight="Bold"/>
+                            <Button Grid.Column="1" Style="{StaticResource TitleBarBtn}" Command="{Binding CloseDepositDialogCommand}">
+                                <Path Data="{StaticResource IconClose}" Fill="{StaticResource BrushTextSecondary}" Width="12" Height="12" Stretch="Uniform"/>
+                            </Button>
+                        </Grid>
+
+                        <TextBlock Text="DESTINATION ACCOUNT" Foreground="{StaticResource BrushTextMuted}" FontSize="10" FontWeight="Bold" Margin="0,0,0,4"/>
+                        <Border Background="{StaticResource BrushBg}" BorderBrush="{StaticResource BrushBorderSubtle}" BorderThickness="1" CornerRadius="8" Padding="12,10" Margin="0,0,0,14">
+                            <StackPanel>
+                                <TextBlock Text="{Binding SelectedAccount.Name}" Foreground="{StaticResource BrushTextPrimary}" FontSize="13" FontWeight="SemiBold"/>
+                                <TextBlock Text="{Binding SelectedAccount.Balance, Converter={StaticResource AmountPrefixConverter}}" Foreground="{StaticResource BrushTextMuted}" FontSize="11"/>
+                            </StackPanel>
+                        </Border>
+
+                        <TextBlock Text="DEPOSIT AMOUNT (BDT)" Foreground="{StaticResource BrushTextMuted}" FontSize="10" FontWeight="Bold" Margin="0,0,0,4"/>
+                        <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding DepositAmount, Mode=TwoWay}" Margin="0,0,0,10"/>
+
+                        <Grid Margin="0,0,0,14">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Button Grid.Column="0" Style="{StaticResource ChipBtn}" Content="৳500" Margin="2,0" Command="{Binding QuickAmountCommand}" CommandParameter="500"/>
+                            <Button Grid.Column="1" Style="{StaticResource ChipBtn}" Content="৳1,000" Margin="2,0" Command="{Binding QuickAmountCommand}" CommandParameter="1000"/>
+                            <Button Grid.Column="2" Style="{StaticResource ChipBtn}" Content="৳2,500" Margin="2,0" Command="{Binding QuickAmountCommand}" CommandParameter="2500"/>
+                            <Button Grid.Column="3" Style="{StaticResource ChipBtn}" Content="৳5,000" Margin="2,0" Command="{Binding QuickAmountCommand}" CommandParameter="5000"/>
+                        </Grid>
+
+                        <TextBlock Text="PAYMENT SOURCE" Foreground="{StaticResource BrushTextMuted}" FontSize="10" FontWeight="Bold" Margin="0,0,0,4"/>
+                        <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding DepositSource, Mode=TwoWay}" Margin="0,0,0,20"/>
+
+                        <Button Style="{StaticResource PrimaryBtn}" Height="44" HorizontalAlignment="Stretch" Command="{Binding ExecuteDepositCommand}">
+                            <TextBlock Text="Confirm Deposit" FontWeight="Bold" FontSize="14"/>
+                        </Button>
+                    </StackPanel>
+                </Border>
+            </Border>
+
+            <!-- ============================================================ -->
+            <!-- TRANSACTION RECEIPT MODAL OVERLAY                            -->
+            <!-- ============================================================ -->
+            <Border Background="#60000000" Visibility="{Binding SelectedTransaction, Converter={StaticResource NullToVisibilityConverter}}" Canvas.ZIndex="110">
+                <Border Style="{StaticResource ModernCard}" Width="460" Padding="28" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,18">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="Transaction Receipt" Foreground="{StaticResource BrushTextPrimary}" FontSize="18" FontWeight="Bold"/>
+                                <TextBlock Text="{Binding SelectedTransaction.ReferenceNumber}" Foreground="{StaticResource BrushTextMuted}" FontSize="11" Margin="0,2,0,0"/>
+                            </StackPanel>
+                            <Button Grid.Column="1" Style="{StaticResource TitleBarBtn}" Command="{Binding CloseSelectedTransactionCommand}">
+                                <Path Data="{StaticResource IconClose}" Fill="{StaticResource BrushTextSecondary}" Width="12" Height="12" Stretch="Uniform"/>
+                            </Button>
+                        </Grid>
+
+                        <Border Background="{StaticResource BrushBg}" BorderBrush="{StaticResource BrushBorderSubtle}" BorderThickness="1" CornerRadius="12" Padding="20" Margin="0,0,0,16" HorizontalAlignment="Stretch">
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="{Binding SelectedTransaction.Amount, Converter={StaticResource AmountPrefixConverter}}" 
+                                           Foreground="{Binding SelectedTransaction.Amount, Converter={StaticResource AmountColorConverter}}" 
+                                           FontSize="32" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                <Border Background="{StaticResource BrushEmeraldPill}" CornerRadius="6" Padding="8,3" Margin="0,8,0,0" HorizontalAlignment="Center">
+                                    <TextBlock Text="SETTLED • COMPLETED" Foreground="{StaticResource BrushEmeraldDark}" FontSize="10" FontWeight="Bold"/>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+
+                        <Grid Margin="0,0,0,8">
+                            <TextBlock Text="Merchant / Payee" Foreground="{StaticResource BrushTextMuted}" FontSize="12"/>
+                            <TextBlock Text="{Binding SelectedTransaction.Title}" Foreground="{StaticResource BrushTextPrimary}" FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Right"/>
+                        </Grid>
+                        <Border Height="1" Background="{StaticResource BrushBorderSubtle}" Margin="0,6,0,6"/>
+
+                        <Grid Margin="0,0,0,8">
+                            <TextBlock Text="Description" Foreground="{StaticResource BrushTextMuted}" FontSize="12"/>
+                            <TextBlock Text="{Binding SelectedTransaction.Description}" Foreground="{StaticResource BrushTextSecondary}" FontSize="12" HorizontalAlignment="Right" MaxWidth="240" TextTrimming="CharacterEllipsis"/>
+                        </Grid>
+                        <Border Height="1" Background="{StaticResource BrushBorderSubtle}" Margin="0,6,0,6"/>
+
+                        <Grid Margin="0,0,0,8">
+                            <TextBlock Text="Category" Foreground="{StaticResource BrushTextMuted}" FontSize="12"/>
+                            <TextBlock Text="{Binding SelectedTransaction.Category}" Foreground="{StaticResource BrushCyan}" FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Right"/>
+                        </Grid>
+                        <Border Height="1" Background="{StaticResource BrushBorderSubtle}" Margin="0,6,0,6"/>
+
+                        <Grid Margin="0,0,0,16">
+                            <TextBlock Text="Timestamp" Foreground="{StaticResource BrushTextMuted}" FontSize="12"/>
+                            <TextBlock Text="{Binding SelectedTransaction.Timestamp}" Foreground="{StaticResource BrushTextPrimary}" FontSize="12" HorizontalAlignment="Right"/>
+                        </Grid>
+
+                        <Button Style="{StaticResource PrimaryBtn}" Height="40" HorizontalAlignment="Stretch" Command="{Binding CloseSelectedTransactionCommand}">
+                            <TextBlock Text="Close Receipt"/>
+                        </Button>
+                    </StackPanel>
+                </Border>
+            </Border>
+
+            <!-- ============================================================ -->
+            <!-- NOTIFICATIONS FLYOUT PANEL                                   -->
+            <!-- ============================================================ -->
+            <Border Background="#20000000" Visibility="{Binding IsNotificationsOpen, Converter={StaticResource BoolToVisConverter}}" Canvas.ZIndex="125">
+                <Border Style="{StaticResource ModernCard}" Width="380" MaxHeight="500" Margin="0,8,18,0"
+                        HorizontalAlignment="Right" VerticalAlignment="Top" Padding="18">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0" Margin="0,0,0,14">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="Notifications &amp; Alerts" Foreground="{StaticResource BrushTextPrimary}" FontSize="15" FontWeight="Bold"/>
+                            </StackPanel>
+                            <Button Grid.Column="1" Style="{StaticResource TitleBarBtn}" Width="28" Height="28" Command="{Binding CloseNotificationsCommand}">
+                                <Path Data="{StaticResource IconClose}" Fill="{StaticResource BrushTextSecondary}" Width="10" Height="10" Stretch="Uniform"/>
+                            </Button>
+                        </Grid>
+
+                        <ScrollViewer Grid.Row="1" MaxHeight="380" VerticalScrollBarVisibility="Auto">
+                            <ItemsControl ItemsSource="{Binding Notifications}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="{StaticResource BrushBg}" BorderBrush="{StaticResource BrushBorderSubtle}" BorderThickness="1" CornerRadius="10" Margin="0,0,0,8" Padding="12,10">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Border Grid.Column="0" Width="32" Height="32" CornerRadius="8" Background="{StaticResource BrushEmeraldPill}" Margin="0,0,10,0" VerticalAlignment="Top">
+                                                    <Path Data="{StaticResource IconBell}" Fill="{StaticResource BrushEmeraldDark}" Width="13" Height="13" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Title}" Foreground="{StaticResource BrushTextPrimary}" FontSize="12" FontWeight="SemiBold"/>
+                                                    <TextBlock Text="{Binding Message}" Foreground="{StaticResource BrushTextMuted}" FontSize="11" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+
+                        <Button Grid.Row="2" Style="{StaticResource SecondaryBtn}" Height="32" Margin="0,10,0,0" HorizontalAlignment="Stretch" Command="{Binding MarkAllNotificationsReadCommand}">
+                            <TextBlock Text="Mark All as Read" FontSize="11" FontWeight="SemiBold"/>
+                        </Button>
+                    </Grid>
+                </Border>
+            </Border>
+
+            <!-- ============================================================ -->
+            <!-- FLOATING TOAST NOTIFICATION                                  -->
+            <!-- ============================================================ -->
+            <Border HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,16,20,0"
+                    Visibility="{Binding IsToastVisible, Converter={StaticResource BoolToVisConverter}}"
+                    Background="{StaticResource BrushSurface}" BorderBrush="{StaticResource BrushEmerald}" BorderThickness="1.5"
+                    CornerRadius="10" Padding="16,12" Canvas.ZIndex="200">
+                <StackPanel Orientation="Horizontal">
+                    <Path Data="{StaticResource IconCheck}" Fill="{StaticResource BrushEmerald}" Width="16" Height="16" Stretch="Uniform" Margin="0,0,12,0" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding ToastMessage}" Foreground="{StaticResource BrushTextPrimary}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>
